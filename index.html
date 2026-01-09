@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WaterWatch Suite | Intelligent Water Security</title>
+    
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+   
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+   
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+   
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+      
+        :root {
+            --brand-primary: #0078D4; 
+            --brand-secondary: #2B88D8;
+            --brand-dark: #102027;
+            --surface-glass: rgba(255, 255, 255, 0.85);
+            --danger: #D9291E;
+            --warning: #FFC83D;
+            --success: #107C10;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; 
+            color: #1f2937;
+        }
+
+       
+        #mapCanvas {
+            background: #f2f2f2;
+            background-image: 
+                radial-gradient(#d1d5db 1px, transparent 1px);
+            background-size: 24px 24px;
+            border-radius: 0.75rem;
+            cursor: pointer;
+        }
+
+      
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+       
+        .fade-in {
+            animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1); 
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-up {
+            opacity: 0; 
+            animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+
+        .glass-panel {
+            background: var(--surface-glass);
+            backdrop-filter: blur(20px) saturate(180%); 
+            border: 1px solid rgba(255,255,255,0.6);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .glass-panel:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+        
+        .nav-active {
+            background-color: rgba(0, 120, 212, 0.08);
+            color: var(--brand-primary);
+            border-right: 3px solid var(--brand-primary);
+        }
+
+       
+        .modal-enter { opacity: 0; transform: scale(0.98); }
+        .modal-enter-active { opacity: 1; transform: scale(1); transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+        .modal-exit { opacity: 1; transform: scale(1); }
+        .modal-exit-active { opacity: 0; transform: scale(0.98); transition: all 0.15s ease-in; }
+
+        
+        .landing-bg {
+            background: radial-gradient(circle at 50% 0%, #e0f2fe 0%, #f0fdf4 40%, #f8fafc 100%);
+        }
+    </style>
+</head>
+<body class="h-screen overflow-hidden flex flex-col md:flex-row">
+
+    
+    <div id="view-landing" class="absolute inset-0 z-50 landing-bg flex flex-col overflow-y-auto transition-opacity duration-500">
+        
+        <nav class="px-8 py-6 flex justify-between items-center max-w-7xl mx-auto w-full slide-up">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-lg shadow-blue-200 flex items-center justify-center text-white">
+                    <i class="ph-fill ph-drop text-xl"></i>
+                </div>
+                <span class="font-bold text-gray-900 text-xl tracking-tight">WaterWatch Suite</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-sm font-medium text-gray-500">Enterprise Platform</span>
+                <button onclick="enterApp()" class="px-6 py-2.5 bg-gray-900 hover:bg-black text-white font-medium rounded-full transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center gap-2">
+                    Launch Platform <i class="ph-bold ph-arrow-right"></i>
+                </button>
+            </div>
+        </nav>
+    
+        
+        <div class="flex-1 flex items-center justify-center px-6">
+            <div class="max-w-5xl mx-auto text-center space-y-8">
+                <div class="slide-up delay-100 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/60 border border-blue-100 backdrop-blur-sm text-blue-700 text-sm font-semibold mb-4 shadow-sm">
+                    <span class="relative flex h-2.5 w-2.5">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-600"></span>
+                    </span>
+                    Live Azure IoT Connection Active
+                </div>
+                <h1 class="slide-up delay-200 text-5xl md:text-7xl font-bold text-gray-900 tracking-tight leading-[1.1]">
+                    From Reactive Repairs to <br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Predictive Water Security</span>
+                </h1>
+                <p class="slide-up delay-300 text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+                    Empowering utilities and communities with AI-driven insights to reduce downtime, cut non-revenue water loss, and ensure equitable access.
+                </p>
+                
+               
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12 text-left slide-up delay-300">
+                    <div class="p-6 bg-white/70 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition hover:-translate-y-1 group">
+                        <div class="w-12 h-12 bg-blue-50 group-hover:bg-blue-100 transition-colors rounded-xl flex items-center justify-center text-blue-600 mb-4">
+                            <i class="ph-fill ph-globe-hemisphere-west text-2xl"></i>
+                        </div>
+                        <h3 class="font-bold text-gray-900 mb-2">Satellite Intelligence</h3>
+                        <p class="text-sm text-gray-500 leading-relaxed"> Fusing Azure Maps & remote sensing data with hydrology models to monitor aquifer health globally.</p>
+                    </div>
+                    <div class="p-6 bg-white/70 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition hover:-translate-y-1 group">
+                        <div class="w-12 h-12 bg-indigo-50 group-hover:bg-indigo-100 transition-colors rounded-xl flex items-center justify-center text-indigo-600 mb-4">
+                            <i class="ph-fill ph-brain text-2xl"></i>
+                        </div>
+                        <h3 class="font-bold text-gray-900 mb-2">Predictive AI</h3>
+                        <p class="text-sm text-gray-500 leading-relaxed">Forecasting hardware failures 48 hours in advance using vibration signatures and Azure ML.</p>
+                    </div>
+                    <div class="p-6 bg-white/70 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition hover:-translate-y-1 group">
+                        <div class="w-12 h-12 bg-green-50 group-hover:bg-green-100 transition-colors rounded-xl flex items-center justify-center text-green-600 mb-4">
+                            <i class="ph-fill ph-chart-line-up text-2xl"></i>
+                        </div>
+                        <h3 class="font-bold text-gray-900 mb-2">Measurable Impact</h3>
+                        <p class="text-sm text-gray-500 leading-relaxed">Quantifying ROI through liters saved, uptime increased, and economic value generated.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+        <div class="py-8 text-center text-gray-400 text-sm flex justify-center items-center gap-6 slide-up delay-300">
+            <span>Powered by Azure</span>
+            <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
+            <span>Global Resilience Network</span>
+            <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
+            <span>SDG 6: Clean Water</span>
+        </div>
+    </div>
+
+    
+    <aside class="w-full md:w-64 bg-white/90 backdrop-blur-xl border-r border-gray-200 flex flex-col z-20 shadow-sm hidden md:flex" id="sidebar">
+        <div class="p-6 border-b border-gray-100 flex items-center gap-2">
+            <div class="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center text-white shadow-md">
+                <i class="ph-fill ph-drop text-xl"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-gray-900 tracking-tight leading-none">WaterWatch</h1>
+                <span class="text-[10px] text-blue-600 font-bold uppercase tracking-wider">Enterprise Suite</span>
+            </div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto py-4">
+            <ul class="space-y-1">
+                <li>
+                    <button onclick="router('dashboard')" id="nav-dashboard" class="nav-active w-full flex items-center gap-3 px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                        <i class="ph ph-squares-four text-lg"></i>
+                        Ops Dashboard
+                    </button>
+                </li>
+                <li>
+                    <button onclick="router('reporting')" id="nav-reporting" class="w-full flex items-center gap-3 px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                        <i class="ph ph-warning-circle text-lg"></i>
+                        Field Reporting
+                        <span class="ml-auto bg-red-100 text-red-700 py-0.5 px-2 rounded-full text-xs font-bold shadow-sm">3</span>
+                    </button>
+                </li>
+                <li>
+                    <button onclick="router('predictive')" id="nav-predictive" class="w-full flex items-center gap-3 px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                        <i class="ph ph-brain text-lg"></i>
+                        AI Prediction Model
+                    </button>
+                </li>
+                <li>
+                    <button onclick="router('impact')" id="nav-impact" class="w-full flex items-center gap-3 px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                        <i class="ph ph-chart-line-up text-lg"></i>
+                        Impact Analysis
+                    </button>
+                </li>
+            </ul>
+
+            <div class="px-6 mt-8">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Live Region</p>
+                <div class="flex items-center gap-3 p-2 bg-gray-50/80 backdrop-blur-sm rounded-md border border-gray-200 cursor-pointer hover:bg-white hover:shadow-md transition-all duration-300" onclick="simulateNewData()">
+                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <div>
+                        <p class="text-xs font-bold text-gray-700">East District, MH</p>
+                        <p class="text-[10px] text-gray-500" id="last-updated">Azure IoT Hub: Connected</p>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="p-4 border-t border-gray-200">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold shadow-sm ring-2 ring-white">
+                    JD
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">Jane Doe</p>
+                    <p class="text-xs text-gray-500 truncate">Program Manager</p>
+                </div>
+                <button class="text-gray-400 hover:text-gray-600 transition"><i class="ph ph-gear"></i></button>
+            </div>
+        </div>
+    </aside>
+
+    
+    <main class="flex-1 flex flex-col h-full relative overflow-hidden hidden" id="main-content">
+        
+        
+        <header class="h-16 bg-white/80 backdrop-blur-md border-b border-gray-200 flex items-center justify-between px-6 z-10 sticky top-0">
+            <h2 id="page-title" class="text-lg font-semibold text-gray-800">Operational Overview</h2>
+            <div class="flex items-center gap-4">
+                <button onclick="simulateNewData()" class="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-gray-50 transition shadow-sm active:scale-95 group">
+                    <i class="ph ph-arrows-clockwise text-blue-600 group-hover:rotate-180 transition-transform duration-500"></i> Sync IoT Data
+                </button>
+                <button class="relative p-2 text-gray-500 hover:bg-gray-100 rounded-full transition">
+                    <i class="ph ph-bell text-xl"></i>
+                    <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
+                </button>
+            </div>
+        </header>
+
+        
+        <div id="view-dashboard" class="flex-1 overflow-y-auto p-6 space-y-6 fade-in">
+           
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                
+                <div class="glass-panel p-4 rounded-xl flex items-start justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">Active Water Points</p>
+                        <h3 class="text-2xl font-bold text-gray-900 mt-1" id="stat-active">142</h3>
+                        <p class="text-xs text-green-600 font-medium mt-1 flex items-center gap-1">
+                            <i class="ph-bold ph-trend-up"></i> 98.4% Uptime
+                        </p>
+                    </div>
+                    <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
+                        <i class="ph-fill ph-drop-half-bottom text-xl"></i>
+                    </div>
+                </div>
+
+                
+                <div class="glass-panel p-4 rounded-xl flex items-start justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">Critical Failures</p>
+                        <h3 class="text-2xl font-bold text-gray-900 mt-1" id="stat-critical">3</h3>
+                        <p class="text-xs text-red-600 font-medium mt-1 flex items-center gap-1">
+                            <i class="ph-bold ph-warning"></i> Action Required
+                        </p>
+                    </div>
+                    <div class="p-2 bg-red-50 rounded-lg text-red-600">
+                        <i class="ph-fill ph-warning-octagon text-xl"></i>
+                    </div>
+                </div>
+
+                
+                <div class="glass-panel p-4 rounded-xl flex items-start justify-between border-l-4 border-indigo-500">
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">Predicted Risk (48h)</p>
+                        <h3 class="text-2xl font-bold text-gray-900 mt-1" id="stat-risk">12</h3>
+                        <p class="text-xs text-indigo-600 font-medium mt-1 flex items-center gap-1">
+                            <i class="ph-bold ph-sparkle"></i> Azure AI Forecast
+                        </p>
+                    </div>
+                    <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+                        <i class="ph-fill ph-brain text-xl"></i>
+                    </div>
+                </div>
+
+                
+                <div class="glass-panel p-4 rounded-xl flex items-start justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">Pop. Impacted</p>
+                        <h3 class="text-2xl font-bold text-gray-900 mt-1" id="stat-pop">18.5k</h3>
+                        <p class="text-xs text-gray-500 font-medium mt-1">
+                            Across 12 villages
+                        </p>
+                    </div>
+                    <div class="p-2 bg-green-50 rounded-lg text-green-600">
+                        <i class="ph-fill ph-users-three text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[500px]">
+                
+                
+                <div class="lg:col-span-2 glass-panel rounded-xl overflow-hidden flex flex-col">
+                    <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-white/50">
+                        <h3 class="font-semibold text-gray-800 flex items-center gap-2">
+                            <i class="ph-fill ph-map-trifold text-blue-600"></i> Azure Maps Visualization
+                        </h3>
+                        <div class="flex gap-2">
+                            <span class="flex items-center text-xs text-gray-500 gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span> Online</span>
+                            <span class="flex items-center text-xs text-gray-500 gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> Critical</span>
+                            <span class="flex items-center text-xs text-gray-500 gap-1"><span class="w-2 h-2 rounded-full bg-orange-400"></span> High Risk</span>
+                        </div>
+                    </div>
+                    <div class="relative flex-1 bg-gray-100/50">
+                        <canvas id="mapCanvas" class="w-full h-full block"></canvas>
+                       
+                        <div id="map-tooltip" class="absolute hidden bg-white p-3 rounded-lg shadow-xl border border-gray-200 text-sm z-10 w-48 pointer-events-none">
+                            <h4 class="font-bold text-gray-900" id="tooltip-title">Pump #102</h4>
+                            <p class="text-xs text-gray-500 mb-2" id="tooltip-loc">Village North</p>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span>Status:</span>
+                                <span class="font-semibold" id="tooltip-status">OK</span>
+                            </div>
+                            <div class="flex justify-between text-xs">
+                                <span>Risk Score:</span>
+                                <span class="font-semibold" id="tooltip-risk">12%</span>
+                            </div>
+                            <p class="text-[10px] text-gray-400 mt-2 italic">Click for telemetry</p>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div class="glass-panel rounded-xl flex flex-col bg-white/50">
+                    <div class="p-4 border-b border-gray-100">
+                        <h3 class="font-semibold text-gray-800">Priority Intervention</h3>
+                        <p class="text-xs text-gray-500">Sorted by Impact & Severity</p>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-2 space-y-2" id="priority-list">
+                       
+                    </div>
+                    <div class="p-3 border-t border-gray-100 bg-gray-50/50">
+                        <button onclick="router('reporting')" class="w-full py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm transition">
+                            View All Tickets
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+        <div id="view-reporting" class="hidden flex-1 overflow-y-auto p-6 fade-in">
+            <div class="max-w-2xl mx-auto">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 bg-gray-50">
+                        <h2 class="text-xl font-bold text-gray-900">New Community Report</h2>
+                        <p class="text-sm text-gray-500">Submit a new issue from the field. PWA Ready & Offline Supported.</p>
+                    </div>
+                    <form id="report-form" class="p-6 space-y-6" onsubmit="handleReportSubmit(event)">
+                        
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Asset Identification</label>
+                            <div class="flex gap-2">
+                                <input type="text" placeholder="Enter Pump ID or Scan QR" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition" required>
+                                <button type="button" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition"><i class="ph ph-qr-code"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-gray-700">Issue Type</label>
+                                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                                    <option>No Water Flow</option>
+                                    <option>Handle Broken</option>
+                                    <option>Leaking Pipe</option>
+                                    <option>Bad Water Quality</option>
+                                    <option>Other</option>
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-sm font-medium text-gray-700">Severity</label>
+                                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                                    <option>Low (Usable)</option>
+                                    <option>Medium (Restricted)</option>
+                                    <option>Critical (Unusable)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Evidence (Optional)</label>
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition cursor-pointer">
+                                <i class="ph ph-camera text-3xl text-gray-400 mb-2"></i>
+                                <p class="text-sm text-gray-500">Click to capture or upload photo</p>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition shadow-md">
+                            Submit Report
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        
+        <div id="view-predictive" class="hidden flex-1 overflow-y-auto p-6 fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+               
+                <div class="bg-gradient-to-br from-indigo-900 to-blue-900 rounded-xl p-8 text-white relative overflow-hidden shadow-lg">
+                    <div class="absolute top-0 right-0 p-4 opacity-10">
+                        <i class="ph-fill ph-brain text-9xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold mb-2">Predictive Maintenance Model</h2>
+                    <p class="text-indigo-100 mb-6 max-w-md">
+                        WaterWatch uses a lightweight Random Forest model trained on Azure ML to analyze hydrology data, usage patterns, and component age.
+                    </p>
+                    <div class="flex gap-4">
+                        <div class="bg-white/10 backdrop-blur-sm p-3 rounded-lg border border-white/20">
+                            <p class="text-xs text-indigo-300 uppercase tracking-wide">Accuracy</p>
+                            <p class="text-xl font-bold">94.2%</p>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-sm p-3 rounded-lg border border-white/20">
+                            <p class="text-xs text-indigo-300 uppercase tracking-wide">Data Points</p>
+                            <p class="text-xl font-bold">1.2M</p>
+                        </div>
+                    </div>
+                </div>
+
+               
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-gray-900">Model Factors Weighting</h3>
+                        <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">v2.1 Active</span>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-600">Aquifer Depth (Satellite)</span>
+                                <span class="font-semibold text-blue-600">High Impact</span>
+                            </div>
+                            <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-blue-500 w-[85%]"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-600">Component Age</span>
+                                <span class="font-semibold text-indigo-600">Med Impact</span>
+                            </div>
+                            <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-indigo-500 w-[60%]"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-600">Community Usage Load</span>
+                                <span class="font-semibold text-purple-600">Critical</span>
+                            </div>
+                            <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-purple-500 w-[92%]"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-100 text-sm text-yellow-800 flex gap-2">
+                        <i class="ph-fill ph-lightbulb mt-0.5"></i>
+                        <p><strong>Insight:</strong> Seasonality drastically increases failure rates in Q2. Pre-emptive maintenance is recommended for Cluster B.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                 <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-gray-900">Risk Distribution by Cluster</h3>
+                    <button onclick="simulateNewData()" class="text-xs text-blue-600 font-medium hover:underline">Refresh Model</button>
+                 </div>
+                 <div class="h-64">
+                    <canvas id="riskChart"></canvas>
+                 </div>
+            </div>
+        </div>
+
+        
+        <div id="view-impact" class="hidden flex-1 overflow-y-auto p-6 fade-in">
+             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-full flex flex-col">
+                <div class="flex justify-between items-end mb-6 shrink-0">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Sustainability Impact</h2>
+                        <p class="text-gray-500">Measuring environmental and social return on investment.</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-500">Est. Economic Value Saved</p>
+                        <p class="text-3xl font-bold text-green-600" id="impact-money">$42,850</p>
+                    </div>
+                </div>
+                
+                <div class="flex-1 w-full min-h-[300px]">
+                    <canvas id="impactChart"></canvas>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 shrink-0">
+                    <div class="text-center p-4">
+                        <p class="text-4xl font-bold text-blue-600 mb-2" id="impact-liters">12.5M</p>
+                        <p class="text-sm font-medium text-gray-600">Liters Water Saved (Annual)</p>
+                    </div>
+                    <div class="text-center p-4 border-l border-r border-gray-100">
+                        <p class="text-4xl font-bold text-gray-900 mb-2">48h</p>
+                        <p class="text-sm font-medium text-gray-600">Avg. Repair Time (Down from 14d)</p>
+                    </div>
+                    <div class="text-center p-4">
+                        <p class="text-4xl font-bold text-green-600 mb-2">3,400</p>
+                        <p class="text-sm font-medium text-gray-600">School Days Gained</p>
+                    </div>
+                </div>
+             </div>
+        </div>
+
+       
+        <div id="asset-modal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center fade-in">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden m-4 transform transition-all scale-95 opacity-0" id="modal-content">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                            <i class="ph-fill ph-pump text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900 leading-none" id="modal-title">Pump #102</h3>
+                            <p class="text-sm text-gray-500 mt-1" id="modal-loc">Village North</p>
+                        </div>
+                    </div>
+                    <button onclick="closeModal()" class="p-2 hover:bg-gray-200 rounded-full transition text-gray-500"><i class="ph-bold ph-x text-lg"></i></button>
+                </div>
+                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+                    
+                    <div class="space-y-5">
+                        <h4 class="font-bold text-gray-800 text-xs uppercase tracking-wider border-b pb-2">Real-time Telemetry</h4>
+                        
+                        <div>
+                            <div class="flex justify-between text-sm mb-1.5">
+                                <span class="text-gray-600">Flow Rate</span>
+                                <span class="font-bold font-mono" id="modal-flow">12.4 L/m</span>
+                            </div>
+                            <div class="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div id="modal-flow-bar" class="h-full bg-blue-500 w-[60%] transition-all duration-1000 ease-out"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-sm mb-1.5">
+                                <span class="text-gray-600">Vibration (Motor)</span>
+                                <span class="font-bold font-mono" id="modal-vib">0.4 mm/s</span>
+                            </div>
+                            <div class="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div id="modal-vib-bar" class="h-full bg-green-500 w-[20%] transition-all duration-1000 ease-out"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-sm mb-1.5">
+                                <span class="text-gray-600">Battery Level</span>
+                                <span class="font-bold font-mono" id="modal-bat">87%</span>
+                            </div>
+                            <div class="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div id="modal-bat-bar" class="h-full bg-gray-600 w-[87%] transition-all duration-1000 ease-out"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-100 text-blue-800 text-xs font-medium">
+                            <i class="ph-fill ph-wifi-high text-lg"></i>
+                            <span>IoT Gateway Online • Latency 42ms</span>
+                        </div>
+                    </div>
+
+                    
+                    <div class="flex flex-col h-full justify-between">
+                         <div>
+                            <h4 class="font-bold text-gray-800 text-xs uppercase tracking-wider border-b pb-2 mb-4">AI Diagnostic</h4>
+                            <div id="modal-ai-card" class="p-4 rounded-lg border-l-4 bg-gray-50 border-gray-300">
+                                <p class="font-bold text-lg mb-1 text-gray-900" id="modal-status">Healthy</p>
+                                <p class="text-sm text-gray-600 leading-relaxed" id="modal-desc">
+                                    System operating within normal parameters. Next scheduled maintenance in 14 days.
+                                </p>
+                            </div>
+                         </div>
+                         
+                         <div class="pt-4 space-y-2">
+                            <button onclick="dispatchAction()" id="btn-dispatch" class="w-full py-2.5 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition shadow-lg flex items-center justify-center gap-2">
+                                <i class="ph-bold ph-wrench"></i> Dispatch Repair Crew
+                            </button>
+                            <button onclick="closeModal()" class="w-full py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition flex items-center justify-center gap-2">
+                                Ignore Alert
+                            </button>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+       
+        <div id="toast" class="fixed bottom-6 right-6 transform translate-y-20 opacity-0 transition-all duration-300 z-[60]">
+            <div class="bg-gray-900 text-white px-6 py-3 rounded-lg shadow-xl flex items-center gap-3">
+                <i class="ph-fill ph-check-circle text-green-400 text-xl" id="toast-icon"></i>
+                <div>
+                    <h4 class="font-semibold text-sm" id="toast-title">Success</h4>
+                    <p class="text-xs text-gray-300" id="toast-message">Operation completed.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        
+        const state = {
+            activeView: 'landing', 
+            pumps: [],
+            currentModalPump: null
+        };
+
+        
+        function enterApp() {
+            const landing = document.getElementById('view-landing');
+            const main = document.getElementById('main-content');
+            const sidebar = document.getElementById('sidebar');
+
+            
+            landing.style.opacity = '0';
+            
+            setTimeout(() => {
+                landing.classList.add('hidden');
+                main.classList.remove('hidden');
+                main.classList.add('fade-in');
+                sidebar.classList.remove('hidden'); 
+                generateData();
+                router('dashboard');
+            }, 500);
+        }
+
+        
+        function generateData() {
+            const villages = ['North Ward', 'South Ward', 'East District', 'West Valley', 'Central Hub'];
+            state.pumps = Array.from({ length: 50 }, (_, i) => {
+                const statusRoll = Math.random();
+                let status = 'active';
+                let riskScore = Math.floor(Math.random() * 30);
+                
+                if (statusRoll > 0.95) {
+                    status = 'critical';
+                    riskScore = 80 + Math.floor(Math.random() * 20);
+                } else if (statusRoll > 0.85) {
+                    status = 'warning';
+                    riskScore = 50 + Math.floor(Math.random() * 30);
+                }
+
+                return {
+                    id: `WP-${1000 + i}`,
+                    location: villages[Math.floor(Math.random() * villages.length)],
+                    x: Math.random() * 100, 
+                    y: Math.random() * 100, 
+                    status: status,
+                    riskScore: riskScore,
+                    population: 100 + Math.floor(Math.random() * 400),
+                    
+                    
+                    flowRate: (10 + Math.random() * 5).toFixed(1),
+                    vibration: (0.1 + Math.random() * 0.4).toFixed(2),
+                    battery: Math.floor(60 + Math.random() * 40),
+                    lastMaintained: new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toLocaleDateString()
+                };
+            });
+        }
+
+        
+        function router(viewName) {
+            document.querySelectorAll('[id^="view-"]').forEach(el => {
+                if(el.id !== 'view-landing') el.classList.add('hidden');
+            });
+            
+            const targetView = document.getElementById(`view-${viewName}`);
+            if(targetView) targetView.classList.remove('hidden');
+            
+            document.querySelectorAll('[id^="nav-"]').forEach(el => el.classList.remove('nav-active', 'text-blue-600', 'bg-blue-50'));
+            const activeNav = document.getElementById(`nav-${viewName}`);
+            if(activeNav) activeNav.classList.add('nav-active');
+
+            const titles = {
+                'dashboard': 'Operational Overview',
+                'reporting': 'Field Reporting',
+                'predictive': 'AI Model Insights',
+                'impact': 'Sustainability Metrics'
+            };
+            document.getElementById('page-title').innerText = titles[viewName];
+            state.activeView = viewName;
+
+            if (viewName === 'dashboard') {
+                renderDashboard();
+                drawMap();
+            } else if (viewName === 'predictive') {
+                setTimeout(renderRiskChart, 100); 
+            } else if (viewName === 'impact') {
+                setTimeout(renderImpactChart, 100);
+            }
+        }
+
+        
+        function renderDashboard() {
+            const active = state.pumps.filter(p => p.status === 'active').length;
+            const critical = state.pumps.filter(p => p.status === 'critical').length;
+            const risk = state.pumps.filter(p => p.riskScore > 60 && p.status === 'active').length;
+            const pop = state.pumps.reduce((acc, curr) => acc + curr.population, 0);
+
+            document.getElementById('stat-active').innerText = active;
+            document.getElementById('stat-critical').innerText = critical;
+            document.getElementById('stat-risk').innerText = risk;
+            document.getElementById('stat-pop').innerText = (pop / 1000).toFixed(1) + 'k';
+
+            const priorityList = document.getElementById('priority-list');
+            priorityList.innerHTML = '';
+            
+            const sorted = [...state.pumps]
+                .sort((a, b) => (b.riskScore * b.population) - (a.riskScore * a.population))
+                .slice(0, 5);
+
+            sorted.forEach(pump => {
+                let colorClass = pump.status === 'critical' ? 'bg-red-100 text-red-700 border-red-200' : 
+                                 pump.status === 'warning' ? 'bg-orange-100 text-orange-700 border-orange-200' : 
+                                 'bg-indigo-50 text-indigo-700 border-indigo-200';
+                
+                let icon = pump.status === 'critical' ? 'ph-warning-octagon' : 
+                           pump.status === 'warning' ? 'ph-warning' : 'ph-sparkle';
+
+                let label = pump.status === 'active' ? 'Prediction: High Failure Risk' : 'Reported Failure';
+
+               
+                const pumpId = pump.id; 
+
+                const html = `
+                    <div onclick="openAssetModal('${pumpId}')" class="flex items-center gap-3 p-3 rounded-lg border bg-white hover:shadow-md hover:border-blue-300 transition cursor-pointer group animate-fade-in-up">
+                        <div class="w-10 h-10 rounded-full ${colorClass} flex items-center justify-center shrink-0">
+                            <i class="ph-fill ${icon} text-lg"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-start">
+                                <h4 class="font-semibold text-gray-900 text-sm truncate group-hover:text-blue-600 transition-colors">${pump.id} - ${pump.location}</h4>
+                                <span class="text-xs font-bold ${pump.status === 'critical' ? 'text-red-600' : 'text-orange-600'}">${pump.riskScore}% Risk</span>
+                            </div>
+                            <p class="text-xs text-gray-500 truncate mt-0.5">${label}</p>
+                        </div>
+                        <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button class="p-1.5 hover:bg-gray-100 rounded text-gray-500"><i class="ph ph-caret-right"></i></button>
+                        </div>
+                    </div>
+                `;
+                priorityList.innerHTML += html;
+            });
+        }
+
+       
+        function openAssetModal(pumpId) {
+            const pump = state.pumps.find(p => p.id === pumpId);
+            if (!pump) return;
+
+            state.currentModalPump = pump;
+            const modal = document.getElementById('asset-modal');
+            const content = document.getElementById('modal-content');
+
+           
+            document.getElementById('modal-title').innerText = pump.id;
+            document.getElementById('modal-loc').innerText = pump.location;
+            
+            document.getElementById('modal-flow').innerText = pump.flowRate + ' L/m';
+            document.getElementById('modal-flow-bar').style.width = (pump.flowRate / 20 * 100) + '%';
+            
+            document.getElementById('modal-vib').innerText = pump.vibration + ' mm/s';
+           
+            const vibColor = pump.vibration > 0.4 ? 'bg-red-500' : (pump.vibration > 0.3 ? 'bg-yellow-500' : 'bg-green-500');
+            const vibBar = document.getElementById('modal-vib-bar');
+            vibBar.className = `h-full ${vibColor} transition-all duration-1000 ease-out`;
+            vibBar.style.width = (pump.vibration / 1.0 * 100) + '%';
+
+            document.getElementById('modal-bat').innerText = pump.battery + '%';
+            document.getElementById('modal-bat-bar').style.width = pump.battery + '%';
+
+           
+            const aiCard = document.getElementById('modal-ai-card');
+            const statusEl = document.getElementById('modal-status');
+            const descEl = document.getElementById('modal-desc');
+            const btn = document.getElementById('btn-dispatch');
+
+            if (pump.status === 'critical') {
+                aiCard.className = 'p-4 rounded-lg border-l-4 bg-red-50 border-red-500';
+                statusEl.className = 'font-bold text-lg mb-1 text-red-700';
+                statusEl.innerText = 'CRITICAL FAILURE DETECTED';
+                descEl.innerText = 'Telemetry indicates catastrophic pressure loss. Likely seal rupture. Immediate intervention required.';
+                btn.disabled = false;
+                btn.className = "w-full py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition shadow-lg flex items-center justify-center gap-2";
+                btn.innerHTML = '<i class="ph-bold ph-wrench"></i> Emergency Dispatch';
+            } else if (pump.status === 'warning' || pump.riskScore > 70) {
+                aiCard.className = 'p-4 rounded-lg border-l-4 bg-orange-50 border-orange-500';
+                statusEl.className = 'font-bold text-lg mb-1 text-orange-700';
+                statusEl.innerText = 'PREDICTIVE ALERT';
+                descEl.innerText = 'Vibration patterns match "Bearing Wear" signature (94% confidence). Failure predicted within 48 hours.';
+                btn.disabled = false;
+                btn.className = "w-full py-2.5 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition shadow-lg flex items-center justify-center gap-2";
+                btn.innerHTML = '<i class="ph-bold ph-wrench"></i> Dispatch Repair Crew';
+            } else {
+                aiCard.className = 'p-4 rounded-lg border-l-4 bg-green-50 border-green-500';
+                statusEl.className = 'font-bold text-lg mb-1 text-green-700';
+                statusEl.innerText = 'Healthy System';
+                descEl.innerText = 'All parameters nominal. Efficiency rating 98%. Next scheduled maintenance: Oct 12.';
+                btn.disabled = true;
+                btn.className = "w-full py-2.5 bg-gray-300 text-gray-500 rounded-lg font-medium cursor-not-allowed flex items-center justify-center gap-2";
+                btn.innerHTML = '<i class="ph-bold ph-check"></i> No Action Needed';
+            }
+
+            modal.classList.remove('hidden');
+         
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('asset-modal');
+            const content = document.getElementById('modal-content');
+            
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        function dispatchAction() {
+            closeModal();
+            showToast('Repair crew dispatched to ' + state.currentModalPump.id, 'success');
+            
+           
+            state.currentModalPump.status = 'active';
+            state.currentModalPump.riskScore = 10;
+            state.currentModalPump.vibration = 0.15;
+            renderDashboard();
+            drawMap();
+        }
+
+      
+        function drawMap() {
+            const canvas = document.getElementById('mapCanvas');
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const container = canvas.parentElement;
+            
+            canvas.width = container.offsetWidth;
+            canvas.height = container.offsetHeight;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            state.pumps.forEach(pump => {
+                const x = (pump.x / 100) * canvas.width;
+                const y = (pump.y / 100) * canvas.height;
+
+                let color = '#107C10'; 
+                if (pump.status === 'critical') color = '#D9291E'; 
+                else if (pump.status === 'warning') color = '#FFC83D'; 
+                else if (pump.riskScore > 70) color = '#5c20d4'; 
+
+              
+                if (pump.status === 'critical' || pump.riskScore > 70) {
+                    ctx.beginPath();
+                    ctx.arc(x, y, 15 + Math.sin(Date.now() / 200) * 3, 0, 2 * Math.PI); 
+                    ctx.fillStyle = pump.status === 'critical' ? 'rgba(217, 41, 30, 0.3)' : 'rgba(92, 32, 212, 0.3)';
+                    ctx.fill();
+                }
+
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, 2 * Math.PI);
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+
+           
+            if(state.activeView === 'dashboard') {
+                requestAnimationFrame(drawMap);
+            }
+        }
+
+       
+        document.getElementById('mapCanvas').addEventListener('click', (e) => {
+            const canvas = document.getElementById('mapCanvas');
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            state.pumps.forEach(pump => {
+                const px = (pump.x / 100) * canvas.width;
+                const py = (pump.y / 100) * canvas.height;
+                if (Math.abs(mouseX - px) < 15 && Math.abs(mouseY - py) < 15) {
+                    openAssetModal(pump.id);
+                }
+            });
+        });
+
+       
+        document.getElementById('mapCanvas').addEventListener('mousemove', (e) => {
+            const canvas = document.getElementById('mapCanvas');
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            let found = false;
+           
+            
+            for (let i = state.pumps.length - 1; i >= 0; i--) {
+                const pump = state.pumps[i];
+                const px = (pump.x / 100) * canvas.width;
+                const py = (pump.y / 100) * canvas.height;
+                
+                if (Math.abs(mouseX - px) < 10 && Math.abs(mouseY - py) < 10) {
+                    const tooltip = document.getElementById('map-tooltip');
+                    
+                  
+                    let left = px + 15;
+                    let top = py - 15;
+                    if(left + 200 > canvas.width) left = px - 200;
+                    
+                    tooltip.style.left = left + 'px';
+                    tooltip.style.top = top + 'px';
+                    tooltip.classList.remove('hidden');
+                    
+                    document.getElementById('tooltip-title').innerText = pump.id;
+                    document.getElementById('tooltip-loc').innerText = pump.location;
+                    document.getElementById('tooltip-risk').innerText = pump.riskScore + '%';
+                    
+                    const statusEl = document.getElementById('tooltip-status');
+                    statusEl.innerText = pump.status.toUpperCase();
+                    statusEl.className = `font-semibold ${pump.status === 'active' ? 'text-green-600' : 'text-red-600'}`;
+                    
+                    canvas.style.cursor = 'pointer';
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                document.getElementById('map-tooltip').classList.add('hidden');
+                canvas.style.cursor = 'default';
+            }
+        });
+
+        
+        let riskChartInstance = null;
+        let impactChartInstance = null;
+
+        function renderRiskChart() {
+            const canvas = document.getElementById('riskChart');
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (riskChartInstance) riskChartInstance.destroy();
+
+           
+            const dataPoints = Array.from({length: 5}, () => Math.floor(Math.random() * 50) + 20);
+
+            riskChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Cluster A', 'Cluster B', 'Cluster C', 'Cluster D', 'Cluster E'],
+                    datasets: [{
+                        label: 'Average Risk Score',
+                        data: dataPoints,
+                        backgroundColor: dataPoints.map(v => v > 50 ? '#D9291E' : (v > 40 ? '#FFC83D' : '#107C10')),
+                        borderRadius: 6,
+                        barThickness: 40
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    },
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        y: { beginAtZero: true, max: 100, grid: { borderDash: [4, 4] } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderImpactChart() {
+            const canvas = document.getElementById('impactChart');
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (impactChartInstance) impactChartInstance.destroy();
+
+            impactChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Water Loss Avoided (kL)',
+                        data: [120, 150, 180, 240, 310, 400],
+                        borderColor: '#0078D4',
+                        backgroundColor: 'rgba(0, 120, 212, 0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#0078D4',
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 1500
+                    },
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { borderDash: [4, 4] } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        
+        function handleReportSubmit(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerText;
+            btn.innerText = 'Submitting...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                showToast('Report submitted. Analyzing risk...', 'success');
+                document.getElementById('report-form').reset();
+                btn.innerText = originalText;
+                btn.disabled = false;
+                router('dashboard');
+                
+               
+                
+                state.pumps.unshift({
+                    id: `WP-${2000 + Math.floor(Math.random()*100)}`,
+                    location: 'South Village (User Reported)',
+                    x: 50, y: 50,
+                    status: 'critical',
+                    riskScore: 98,
+                    population: 500,
+                    flowRate: 0,
+                    vibration: 0,
+                    battery: 90,
+                    lastMaintained: 'Today'
+                });
+                renderDashboard();
+                drawMap();
+            }, 1200);
+        }
+
+        function simulateNewData() {
+            showToast('Syncing satellite & IoT telemetry...', 'info');
+            
+            
+            
+            state.pumps.forEach(p => {
+               
+                
+                p.flowRate = (parseFloat(p.flowRate) + (Math.random() - 0.5)).toFixed(1);
+                
+                if (Math.random() > 0.7) {
+                    p.riskScore = Math.min(100, Math.max(0, p.riskScore + Math.floor(Math.random() * 10 - 5)));
+                }
+            });
+
+            document.getElementById('last-updated').innerText = 'Azure IoT Hub: Connected';
+
+          
+            
+            if (state.activeView === 'dashboard') {
+                renderDashboard();
+            } else if (state.activeView === 'predictive') {
+                renderRiskChart(); 
+                
+            } else if (state.activeView === 'impact') {
+               
+                
+                 const money = 42850 + Math.floor(Math.random() * 500);
+                 document.getElementById('impact-money').innerText = '$' + money.toLocaleString();
+                 renderImpactChart();
+            }
+        }
+
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            const title = document.getElementById('toast-title');
+            
+            document.getElementById('toast-message').innerText = msg;
+            
+            if (type === 'success') {
+                icon.className = 'ph-fill ph-check-circle text-green-400 text-xl';
+                title.innerText = 'Success';
+            } else if (type === 'info') {
+                icon.className = 'ph-fill ph-info text-blue-400 text-xl';
+                title.innerText = 'System Update';
+            } else {
+                 icon.className = 'ph-fill ph-warning text-yellow-400 text-xl';
+                title.innerText = 'Alert';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+       
+        window.onload = function() {
+           
+        };
+
+        window.addEventListener('resize', () => {
+            if (state.activeView === 'dashboard') {
+                drawMap();
+            }
+        });
+
+    </script>
+</body>
+</html>
